@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Income } from '@/types'
 import { nanoid } from 'nanoid'
+import { MOCK_INCOME } from '@/lib/utils/mockData'
 
 interface IncomeState {
   incomes: Income[]
@@ -13,7 +14,7 @@ interface IncomeState {
 export const useIncomeStore = create<IncomeState>()(
   persist(
     (set) => ({
-      incomes: [],
+      incomes: MOCK_INCOME,
       addIncome: (income) =>
         set(s => ({ incomes: [...s.incomes, { ...income, id: nanoid() }] })),
       updateIncome: (id, income) =>

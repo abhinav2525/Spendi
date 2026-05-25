@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { GroceryEntry } from '@/types'
 import { nanoid } from 'nanoid'
+import { MOCK_GROCERIES } from '@/lib/utils/mockData'
 
 interface GroceryState {
   groceries: GroceryEntry[]
@@ -13,7 +14,7 @@ interface GroceryState {
 export const useGroceryStore = create<GroceryState>()(
   persist(
     (set) => ({
-      groceries: [],
+      groceries: MOCK_GROCERIES,
       addGrocery: (entry) =>
         set(s => ({ groceries: [...s.groceries, { ...entry, id: nanoid() }] })),
       updateGrocery: (id, entry) =>

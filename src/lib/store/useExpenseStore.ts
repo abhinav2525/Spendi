@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Expense } from '@/types'
 import { nanoid } from 'nanoid'
+import { MOCK_EXPENSES } from '@/lib/utils/mockData'
 
 interface ExpenseState {
   expenses: Expense[]
@@ -13,7 +14,7 @@ interface ExpenseState {
 export const useExpenseStore = create<ExpenseState>()(
   persist(
     (set) => ({
-      expenses: [],
+      expenses: MOCK_EXPENSES,
       addExpense: (expense) =>
         set(s => ({ expenses: [...s.expenses, { ...expense, id: nanoid() }] })),
       updateExpense: (id, expense) =>

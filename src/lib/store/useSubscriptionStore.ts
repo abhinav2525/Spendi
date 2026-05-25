@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Subscription } from '@/types'
 import { nanoid } from 'nanoid'
+import { MOCK_SUBSCRIPTIONS } from '@/lib/utils/mockData'
 
 interface SubscriptionState {
   subscriptions: Subscription[]
@@ -13,7 +14,7 @@ interface SubscriptionState {
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
     (set) => ({
-      subscriptions: [],
+      subscriptions: MOCK_SUBSCRIPTIONS,
       addSubscription: (sub) =>
         set(s => ({ subscriptions: [...s.subscriptions, { ...sub, id: nanoid() }] })),
       updateSubscription: (id, sub) =>
