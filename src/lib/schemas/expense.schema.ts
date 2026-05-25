@@ -18,3 +18,4 @@ export const ExpenseSchema = z.object({
 })
 
 export type ExpenseInput = z.infer<typeof ExpenseSchema>
+export type ExpenseFormValues = z.input<typeof ExpenseSchema>
