@@ -1,4 +1,13 @@
 import { Header } from '@/components/layout/Header'
+import { ExpenseTable } from '@/components/expenses/ExpenseTable'
+
 export default function ExpensesPage() {
-  return <><Header title="Expenses" /><div className="page-container"><p>Coming soon</p></div></>
+  return (
+    <>
+      <Header title="Day-to-Day Expenses" />
+      <div className="page-container">
+        <ExpenseTable />
+      </div>
+    </>
+  )
 }
