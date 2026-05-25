@@ -101,7 +101,7 @@ export function SubscriptionGrid() {
         )}
       </div>
 
-      <SubscriptionForm open={showForm} onClose={() => setShowForm(false)} editing={editing} />
+      <SubscriptionForm open={showForm} onClose={() => { setShowForm(false); setEditing(undefined) }} editing={editing} />
     </div>
   )
 }

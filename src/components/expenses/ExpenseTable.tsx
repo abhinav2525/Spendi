@@ -29,14 +29,15 @@ export function ExpenseTable() {
   const [editing, setEditing] = useState<Expense | undefined>()
   const [showForm, setShowForm] = useState(false)
 
-  const filtered = expenses
-    .filter(e => e.userId === currentUser?.id)
-    .filter(e => e.description.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const myExpenses = expenses.filter(e => e.userId === currentUser?.id)
 
-  const thisMonthTotal = filtered
+  const thisMonthTotal = myExpenses
     .filter(e => e.date.startsWith(format(new Date(), 'yyyy-MM')))
     .reduce((sum, e) => sum + e.amount, 0)
+
+  const filtered = myExpenses
+    .filter(e => e.description.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
     <div className="space-y-4">
@@ -126,7 +127,7 @@ export function ExpenseTable() {
         </div>
       </div>
 
-      <ExpenseForm open={showForm} onClose={() => setShowForm(false)} editing={editing} />
+      <ExpenseForm open={showForm} onClose={() => { setShowForm(false); setEditing(undefined) }} editing={editing} />
     </div>
   )
 }

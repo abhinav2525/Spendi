@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { SubscriptionSchema, SubscriptionInput } from '@/lib/schemas/subscription.schema'
@@ -18,15 +19,18 @@ export function SubscriptionForm({ open, onClose, editing }: Props) {
   const { addSubscription, updateSubscription } = useSubscriptionStore()
   const { currentUser } = useAuthStore()
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<SubscriptionInput>({
-    resolver: zodResolver(SubscriptionSchema),
-    defaultValues: editing || {
-      frequency: 'monthly',
-      category: 'other',
-      isActive: true,
-      renewalDate: toISODate(new Date()),
-    },
+  const defaultAdd = { frequency: 'monthly' as const, category: 'other' as const, isActive: true, renewalDate: toISODate(new Date()) }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<SubscriptionInput>({
+    resolver: zodResolver(SubscriptionSchema) as any,
+    defaultValues: editing || defaultAdd,
   })
+
+  useEffect(() => {
+    if (open) reset(editing || defaultAdd)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editing])
 
   const onSubmit = (data: SubscriptionInput) => {
     if (editing) updateSubscription(editing.id, data)

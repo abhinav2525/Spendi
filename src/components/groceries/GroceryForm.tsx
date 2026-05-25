@@ -19,7 +19,7 @@ export function GroceryForm({ open, onClose }: Props) {
   const { currentUser } = useAuthStore()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<GroceryEntryInput>({
+  const { register, handleSubmit, control, watch, setValue, reset, formState: { errors } } = useForm<GroceryEntryInput>({
     resolver: zodResolver(GroceryEntrySchema) as any,
     defaultValues: {
       date: toISODate(new Date()),
@@ -41,6 +41,7 @@ export function GroceryForm({ open, onClose }: Props) {
   const onSubmit = (data: GroceryEntryInput) => {
     const totalAmount = data.items.reduce((sum, item) => sum + item.totalPrice, 0)
     addGrocery({ ...data, userId: currentUser!.id, totalAmount })
+    reset()
     onClose()
   }
 

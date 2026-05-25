@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ExpenseSchema, ExpenseInput } from '@/lib/schemas/expense.schema'
@@ -23,26 +24,28 @@ export function ExpenseForm({ open, onClose, editing }: Props) {
   const { addExpense, updateExpense } = useExpenseStore()
   const { currentUser } = useAuthStore()
 
+  const defaultAdd = { date: toISODate(new Date()), isRecurring: false, tags: [] as string[], customFields: [] as { label: string; value: string }[], paymentMode: 'upi' as const }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<ExpenseInput>({
+  const { register, handleSubmit, setValue, watch, reset, control, formState: { errors } } = useForm<ExpenseInput>({
     resolver: zodResolver(ExpenseSchema) as any,
     defaultValues: editing ? {
-      amount: editing.amount,
-      category: editing.category,
-      description: editing.description,
-      date: editing.date,
-      isRecurring: editing.isRecurring,
-      paymentMode: editing.paymentMode,
-      tags: editing.tags,
-      customFields: editing.customFields,
-    } : {
-      date: toISODate(new Date()),
-      isRecurring: false,
-      tags: [],
-      customFields: [],
-      paymentMode: 'upi',
-    },
+      amount: editing.amount, category: editing.category, description: editing.description,
+      date: editing.date, isRecurring: editing.isRecurring, recurringPeriod: editing.recurringPeriod,
+      paymentMode: editing.paymentMode, tags: editing.tags, customFields: editing.customFields,
+    } : defaultAdd,
   })
+
+  useEffect(() => {
+    if (open) reset(editing ? {
+      amount: editing.amount, category: editing.category, description: editing.description,
+      date: editing.date, isRecurring: editing.isRecurring, recurringPeriod: editing.recurringPeriod,
+      paymentMode: editing.paymentMode, tags: editing.tags, customFields: editing.customFields,
+    } : defaultAdd)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editing])
+
+  const isRecurring = watch('isRecurring')
 
   const { fields: cfFields, append: cfAppend, remove: cfRemove } = useFieldArray({ control, name: 'customFields' })
 
@@ -64,19 +67,19 @@ export function ExpenseForm({ open, onClose, editing }: Props) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Amount (₹)</Label>
-              <Input type="number" placeholder="0" {...register('amount')} />
+              <Label htmlFor="exp-amount">Amount (₹)</Label>
+              <Input id="exp-amount" type="number" placeholder="0" {...register('amount')} />
               {errors.amount && <p className="text-xs text-red-400">{errors.amount.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label>Date</Label>
-              <Input type="date" {...register('date')} />
+              <Label htmlFor="exp-date">Date</Label>
+              <Input id="exp-date" type="date" {...register('date')} />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label>Description</Label>
-            <Input placeholder="What did you spend on?" {...register('description')} />
+            <Label htmlFor="exp-desc">Description</Label>
+            <Input id="exp-desc" placeholder="What did you spend on?" {...register('description')} />
             {errors.description && <p className="text-xs text-red-400">{errors.description.message}</p>}
           </div>
 
@@ -110,6 +113,33 @@ export function ExpenseForm({ open, onClose, editing }: Props) {
               </Select>
             </div>
           </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              id="exp-recurring"
+              type="checkbox"
+              className="w-4 h-4 accent-blue-500"
+              {...register('isRecurring')}
+            />
+            <Label htmlFor="exp-recurring" className="cursor-pointer">Recurring expense</Label>
+          </div>
+
+          {isRecurring && (
+            <div className="space-y-1.5">
+              <Label>Recurring Period</Label>
+              <Select
+                onValueChange={(v) => setValue('recurringPeriod', v as ExpenseInput['recurringPeriod'])}
+                defaultValue={editing?.recurringPeriod || 'monthly'}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">

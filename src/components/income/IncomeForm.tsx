@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { IncomeSchema, IncomeInput } from '@/lib/schemas/income.schema'
@@ -19,15 +20,18 @@ export function IncomeForm({ open, onClose, editing }: Props) {
   const { addIncome, updateIncome } = useIncomeStore()
   const { currentUser } = useAuthStore()
 
-  const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<IncomeInput>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const defaultAdd = { source: 'salary' as const, frequency: 'monthly' as const, date: toISODate(new Date()), customFields: [] as { label: string; value: string }[] }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { register, handleSubmit, setValue, reset, control, formState: { errors } } = useForm<IncomeInput>({
     resolver: zodResolver(IncomeSchema) as any,
-    defaultValues: editing || {
-      frequency: 'monthly',
-      date: toISODate(new Date()),
-      customFields: [],
-    },
+    defaultValues: editing || defaultAdd,
   })
+
+  useEffect(() => {
+    if (open) reset(editing || defaultAdd)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editing])
 
   const { fields, append, remove } = useFieldArray({ control, name: 'customFields' })
 

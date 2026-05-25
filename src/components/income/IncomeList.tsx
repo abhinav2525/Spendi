@@ -127,7 +127,7 @@ export function IncomeList() {
         </table>
       </div>
 
-      <IncomeForm open={showForm} onClose={() => setShowForm(false)} editing={editing} />
+      <IncomeForm open={showForm} onClose={() => { setShowForm(false); setEditing(undefined) }} editing={editing} />
     </div>
   )
 }
