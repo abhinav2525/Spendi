@@ -1,19 +1,9 @@
-'use client'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/lib/store/useAuthStore'
+import { requireMember } from '@/lib/server/supabase/auth'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomNav } from '@/components/layout/BottomNav'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useAuthStore()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!currentUser) router.push('/login')
-  }, [currentUser, router])
-
-  if (!currentUser) return null
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  await requireMember()
 
   return (
     <div className="flex h-screen overflow-hidden" style={{background: 'var(--color-background)'}}>
