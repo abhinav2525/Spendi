@@ -50,8 +50,10 @@ There are no tests at this time. The verification bar before committing is:
 > | Subscriptions | ✅ Server Actions + TanStack Query — `useSubscriptionStore` deleted |
 > | Groceries | ✅ Server Actions + TanStack Query — `useGroceryStore` deleted (`totalAmount` recomputed server-side) |
 > | Budgets | ✅ Server Actions + TanStack Query — `useBudgetStore` deleted (`setBudget` upserts via `onConflictDoUpdate` on partial unique indexes) |
+> | Events | ✅ Server Actions + TanStack Query — `useEventStore` deleted (Zod + DB CHECK enforce `endDate >= startDate`; delete cascades to `expenses.eventId = NULL`) |
 > | Scope toggle | Stays Zustand (UI state, not server state) |
-> | Events | Still Zustand + localStorage — to be migrated in upcoming phases |
+>
+> **All domains are migrated.** The only Zustand store still alive is `useScopeStore` (UI state). What's left is Phase 9 (final cleanup): retire `scopeFilter.ts`, confirm `mockData.ts` only feeds the seed script, refresh any stale doc references.
 >
 > Before assuming a domain uses Zustand: grep `useXxxStore`. If the store file is gone, the domain is migrated and consumers use `useXxxQuery / useCreateX / useUpdateX / useDeleteX` hooks under `src/lib/client/hooks/`. See **"Migrated domain pattern"** below for the canonical template (established by expenses, applied to income and subscriptions).
 
@@ -167,7 +169,7 @@ Each domain has its own store in `src/lib/store/`. All use `persist` middleware:
 | `useSubscriptionStore` | — | — | **DELETED in Phase 5**, replaced by `useSubscriptionsQuery` + mutation hooks |
 | `useGroceryStore` | — | — | **DELETED in Phase 6**, replaced by `useGroceriesQuery` + mutation hooks |
 | `useBudgetStore` | — | — | **DELETED in Phase 7**, replaced by `useBudgetsQuery` + `useSetBudget` (upsert) + `useUpdateBudget` + `useDeleteBudget` |
-| `useEventStore` | `event-storage` | `mockData.MOCK_EVENTS` | Pending migration |
+| `useEventStore` | — | — | **DELETED in Phase 8**, replaced by `useEventsQuery` + `useCreateEvent` + `useUpdateEvent` + `useDeleteEvent` |
 
 Pending-migration stores still follow the legacy CRUD shape: `items: T[]`, `addX(omit-id)`, `updateX(id, partial)`, `deleteX(id)`, with `nanoid` IDs. Seeded auth users (post-Phase-2, in Supabase): `rajesh@gharkhata.local` / `priya@gharkhata.local` / `arjun@gharkhata.local`, all with password `gharkhata-dev-1234` (seed script).
 
@@ -183,7 +185,7 @@ The pattern is consistent — find the files for any domain by name. **State col
 | Subscriptions | `Subscription`, `SubscriptionFrequency`, `SubscriptionCategory` | `subscription.schema.ts` | ✅ `server/actions/subscriptions.ts` + `client/hooks/useSubscriptions.ts` | — | `components/subscriptions/` |
 | Groceries | `GroceryEntry`, `GroceryItem` | `grocery.schema.ts` | ✅ `server/actions/groceries.ts` + `client/hooks/useGroceries.ts` | — | `components/groceries/` |
 | Budgets | `Budget`, `BudgetCategory`, `BudgetScope` | `budget.schema.ts` | ✅ `server/actions/budgets.ts` + `client/hooks/useBudgets.ts` | `budgetStatus.ts` | `components/budgets/` |
-| Events | `FinanceEvent`, `EventScope` | `event.schema.ts` | ⏳ `store/useEventStore.ts` (Zustand) | `eventStatus.ts` | `components/events/` |
+| Events | `FinanceEvent`, `EventScope` | `event.schema.ts` | ✅ `server/actions/events.ts` + `client/hooks/useEvents.ts` | `eventStatus.ts` | `components/events/` |
 | Scope toggle (UI state, stays) | — | — | `store/useScopeStore.ts` (Zustand) | `scopeFilter.ts` (used only by pending-migration consumers) | `components/layout/ScopeToggle.tsx` |
 
 ### Scope toggle (Mine / Household)

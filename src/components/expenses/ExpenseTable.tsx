@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useExpensesQuery, useDeleteExpense } from '@/lib/client/hooks/useExpenses'
-import { useEventStore } from '@/lib/store/useEventStore'
+import { useEventsQuery } from '@/lib/client/hooks/useEvents'
 import { useScopeStore } from '@/lib/store/useScopeStore'
 import { formatCurrency } from '@/lib/utils/formatCurrency'
 import { formatDate } from '@/lib/utils/dateHelpers'
@@ -25,7 +25,7 @@ function pillStyle(category: string) {
 export function ExpenseTable() {
   const { scope } = useScopeStore()
   const { data: expenses = [] } = useExpensesQuery(scope)
-  const { events } = useEventStore()
+  const { data: events = [] } = useEventsQuery()
   const del = useDeleteExpense()
   const [search, setSearch] = useState('')
   const [editing, setEditing] = useState<Expense | undefined>()

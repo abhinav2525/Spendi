@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useParams, useRouter, notFound } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
-import { useEventStore } from '@/lib/store/useEventStore'
+import { useEventsQuery, useDeleteEvent } from '@/lib/client/hooks/useEvents'
 import { useExpensesQuery } from '@/lib/client/hooks/useExpenses'
 import { useUser } from '@/lib/client/hooks/useUser'
 import { summarizeEvent, phaseOf } from '@/lib/utils/eventStatus'
@@ -24,7 +24,8 @@ const PHASE_STYLE = {
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
-  const { events, deleteEvent } = useEventStore()
+  const { data: events = [] } = useEventsQuery()
+  const del = useDeleteEvent()
   const { data: expenses = [] } = useExpensesQuery('household')
   const { data: currentUser } = useUser()
   const [editing, setEditing] = useState(false)
@@ -50,8 +51,7 @@ export default function EventDetailPage() {
 
   const handleDelete = () => {
     if (confirm(`Delete "${event.name}"? Linked expenses will keep their data but lose the event tag.`)) {
-      deleteEvent(event.id)
-      router.push('/events')
+      del.mutate(event.id, { onSuccess: () => router.push('/events') })
     }
   }
 

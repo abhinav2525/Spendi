@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { EventSchema, EventInput, EVENT_EMOJI_PRESETS } from '@/lib/schemas/event.schema'
-import { useEventStore } from '@/lib/store/useEventStore'
+import { useCreateEvent, useUpdateEvent } from '@/lib/client/hooks/useEvents'
 import { useUser } from '@/lib/client/hooks/useUser'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -21,7 +21,9 @@ interface Props {
 }
 
 export function EventForm({ open, onClose, scope = 'user', editing }: Props) {
-  const { addEvent, updateEvent } = useEventStore()
+  const create = useCreateEvent()
+  const update = useUpdateEvent()
+  // currentUser seeds the form's userId for Zod's superRefine; server overrides.
   const { data: currentUser } = useUser()
 
   const defaultValues: EventInput = editing
@@ -69,11 +71,10 @@ export function EventForm({ open, onClose, scope = 'user', editing }: Props) {
       notes: data.notes?.trim() || undefined,
     }
     if (editing) {
-      updateEvent(editing.id, payload)
+      update.mutate({ id: editing.id, input: payload }, { onSuccess: onClose })
     } else {
-      addEvent(payload)
+      create.mutate(payload, { onSuccess: onClose })
     }
-    onClose()
   }
 
   return (

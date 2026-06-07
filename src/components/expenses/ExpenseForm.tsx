@@ -4,7 +4,7 @@ import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ExpenseSchema, ExpenseInput } from '@/lib/schemas/expense.schema'
 import { useCreateExpense, useUpdateExpense } from '@/lib/client/hooks/useExpenses'
-import { useEventStore } from '@/lib/store/useEventStore'
+import { useEventsQuery } from '@/lib/client/hooks/useEvents'
 import { useUser } from '@/lib/client/hooks/useUser'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -24,7 +24,7 @@ interface Props {
 export function ExpenseForm({ open, onClose, editing }: Props) {
   const create = useCreateExpense()
   const update = useUpdateExpense()
-  const { events } = useEventStore()
+  const { data: events = [] } = useEventsQuery()
   const { data: currentUser } = useUser()
 
   // Events the current user can tag against: their own + household

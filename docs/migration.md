@@ -22,7 +22,7 @@ The end state: data lives in Supabase, three family members share one household,
 | 5 | Subscriptions | ✅ Done |
 | 6 | Groceries | ✅ Done |
 | 7 | Budgets (including the partial-index upsert) | ✅ Done |
-| 8 | Events (including the `endDate >= startDate` Zod + DB rule) | ⏳ Pending |
+| 8 | Events (including the `endDate >= startDate` Zod + DB rule) | ✅ Done |
 | 9 | Final cleanup — delete `mockData.ts` from production paths, retire `scopeFilter.ts` if unused, refresh CLAUDE.md | ⏳ Pending |
 
 The full plan with file-level detail lives at `~/.claude/plans/cosmic-munching-brooks.md`.
@@ -157,9 +157,9 @@ Already migrated (look at these as worked examples when migrating a pending doma
 - **Subscriptions** — Phase 5. Demonstrates handling a nullable text column (`notes`) via the `null` → `undefined` rowToX mapper. Sorted by `renewalDate DESC` instead of `date DESC`.
 - **Groceries** — Phase 6. Demonstrates **server-side recomputation of a derived field**: `totalAmount` is computed in the Server Action from `sum(items[].totalPrice)`, not trusted from the client. The Zod schema deliberately omits `totalAmount` so consumers can't pass it. The form's `useFieldArray` + `watch` pattern (with the accepted `react-hooks/incompatible-library` warning) stayed unchanged.
 - **Budgets** — Phase 7. Demonstrates **partial-index `INSERT … ON CONFLICT DO UPDATE`** via Drizzle's `onConflictDoUpdate({ target, targetWhere, set })`. The Server Action branches on `scope`: user-scoped upserts target `(householdId, userId, category) WHERE scope = 'user'`, household-scoped upserts target `(householdId, category) WHERE scope = 'household'`. `userId` for user-scoped is forced to the caller's id, ignoring any client value. The list query has no `scope` parameter — it returns all household budgets and consumers filter client-side (the list is small).
+- **Events** — Phase 8. Demonstrates **two-layer invariant enforcement** (Zod `superRefine` client-side for friendly errors + DB CHECK constraint server-side as the floor) on the `endDate >= startDate` rule. `createdAt` is server-stamped via Drizzle's `defaultNow()` and converted to ISO string in `rowToEvent`. Deleting an event cascades to `expenses.eventId = NULL` (FK ON DELETE SET NULL), so `useDeleteEvent` invalidates both `['events']` and `['expenses']` caches. Like budgets, `useEventsQuery()` has no scope parameter — `EventList`'s filtering rules are more nuanced than a single `mine` vs `household` query can express.
 
-When you migrate the remaining pending domain, watch for:
-- **Events** — Has `endDate >= startDate` (Zod superRefine + DB CHECK). Returns the inserted row (consumers rely on `addEvent` returning the new id). `createdAt` is server-stamped.
+The domain migration is now complete. **Only Phase 9 (final cleanup) remains:** retire `scopeFilter.ts` (no consumers left), confirm `mockData.ts` is imported only by the server-side seed script, refresh stale references in CLAUDE.md once the cleanup is done.
 
 ## Cross-domain joins (don't combine prematurely)
 

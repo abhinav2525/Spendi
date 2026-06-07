@@ -65,8 +65,8 @@ Log in as any of the three seeded family members (see [Demo accounts](#demo-acco
 | Subscriptions | ✅ Supabase Postgres | `useSubscriptionsQuery / useCreateSubscription / useUpdateSubscription / useDeleteSubscription` |
 | Groceries | ✅ Supabase Postgres | `useGroceriesQuery / useCreateGrocery / useUpdateGrocery / useDeleteGrocery` |
 | Budgets | ✅ Supabase Postgres | `useBudgetsQuery / useSetBudget / useUpdateBudget / useDeleteBudget` |
+| Events | ✅ Supabase Postgres | `useEventsQuery / useCreateEvent / useUpdateEvent / useDeleteEvent` |
 | Scope toggle ("Mine" / "Household") | Zustand (UI state only — stays put) | `useScopeStore` |
-| Events | ⏳ Zustand + `localStorage` | `useEventStore` |
 
 Each ⏳ row reads from `MOCK_*` seeds in `src/lib/utils/mockData.ts` on first load, then persists local changes to `localStorage`. To re-seed during dev, delete the relevant key from DevTools → Application → Local Storage.
 

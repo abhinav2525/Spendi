@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
-import { useEventStore } from '@/lib/store/useEventStore'
+import { useEventsQuery } from '@/lib/client/hooks/useEvents'
 import { useExpensesQuery } from '@/lib/client/hooks/useExpenses'
 import { useUser } from '@/lib/client/hooks/useUser'
 import { useScopeStore } from '@/lib/store/useScopeStore'
@@ -19,7 +19,7 @@ const PHASE_TABS: { value: EventPhase | 'all'; label: string }[] = [
 ]
 
 export function EventList() {
-  const { events } = useEventStore()
+  const { data: events = [] } = useEventsQuery()
   const { data: expenses = [] } = useExpensesQuery('household')
   const { data: currentUser } = useUser()
   const { scope } = useScopeStore()

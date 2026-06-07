@@ -4,7 +4,7 @@ TanStack Query hooks that wrap Server Actions. See `/CLAUDE.md` "Migrated domain
 
 ## File-per-domain convention
 
-One file per domain (`useExpenses.ts`, `useIncomes.ts`, `useSubscriptions.ts`, `useGroceries.ts`, `useBudgets.ts`, `useUser.ts`, `useHouseholdMembers.ts`, ...). Each file exports:
+One file per domain (`useExpenses.ts`, `useIncomes.ts`, `useSubscriptions.ts`, `useGroceries.ts`, `useBudgets.ts`, `useEvents.ts`, `useUser.ts`, `useHouseholdMembers.ts`). Each file exports:
 
 - `useXQuery(scope)` — `useQuery` wrapper around the `listX` Server Action.
 - `useCreateX()` / `useUpdateX()` / `useDeleteX()` — `useMutation` wrappers. Hooks are named for the action, not the side-effect ("CreateExpense", not "ExpenseCreate") so call sites read like English: `const create = useCreateExpense()`.
