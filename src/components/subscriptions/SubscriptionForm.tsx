@@ -3,8 +3,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { SubscriptionSchema, SubscriptionInput } from '@/lib/schemas/subscription.schema'
-import { useSubscriptionStore } from '@/lib/store/useSubscriptionStore'
-import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useCreateSubscription, useUpdateSubscription } from '@/lib/client/hooks/useSubscriptions'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,13 +15,13 @@ import { Subscription } from '@/types'
 interface Props { open: boolean; onClose: () => void; editing?: Subscription }
 
 export function SubscriptionForm({ open, onClose, editing }: Props) {
-  const { addSubscription, updateSubscription } = useSubscriptionStore()
-  const { currentUser } = useAuthStore()
+  const create = useCreateSubscription()
+  const update = useUpdateSubscription()
 
   const defaultAdd = { frequency: 'monthly' as const, category: 'other' as const, isActive: true, renewalDate: toISODate(new Date()) }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<SubscriptionInput>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(SubscriptionSchema) as any,
     defaultValues: editing || defaultAdd,
   })
@@ -33,9 +32,8 @@ export function SubscriptionForm({ open, onClose, editing }: Props) {
   }, [open, editing])
 
   const onSubmit = (data: SubscriptionInput) => {
-    if (editing) updateSubscription(editing.id, data)
-    else addSubscription({ ...data, userId: currentUser!.id })
-    onClose()
+    if (editing) update.mutate({ id: editing.id, input: data }, { onSuccess: onClose })
+    else create.mutate(data, { onSuccess: onClose })
   }
 
   return (
@@ -96,7 +94,11 @@ export function SubscriptionForm({ open, onClose, editing }: Props) {
 
           <div className="flex gap-2 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-            <Button type="submit" className="flex-1" style={{background: 'var(--color-brand-blue)'}}>
+            <Button
+              type="submit"
+              className="flex-1 rounded-2xl font-bold transition-transform active:scale-95"
+              style={{background: 'var(--color-primary)', color: 'var(--color-primary-foreground)'}}
+            >
               {editing ? 'Save' : 'Add Subscription'}
             </Button>
           </div>
