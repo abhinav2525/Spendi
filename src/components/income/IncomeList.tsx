@@ -1,39 +1,45 @@
 'use client'
 import { useState } from 'react'
-import { useIncomeStore } from '@/lib/store/useIncomeStore'
-import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useIncomesQuery, useDeleteIncome } from '@/lib/client/hooks/useIncomes'
+import { useScopeStore } from '@/lib/store/useScopeStore'
 import { formatCurrency } from '@/lib/utils/formatCurrency'
 import { formatDate } from '@/lib/utils/dateHelpers'
 import { Button } from '@/components/ui/button'
-import { Pencil, Trash2, Plus } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { OwnerPill } from '@/components/layout/OwnerPill'
+import { Pencil, Trash2, Plus, Search } from 'lucide-react'
 import { IncomeForm } from './IncomeForm'
 import { Income } from '@/types'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
+import { SOURCE_COLOR_MAP, chartTooltipStyle } from '@/lib/charts/theme'
 
-const SOURCE_COLORS: Record<string, string> = {
-  salary: 'oklch(0.623 0.214 259.1)',
-  business: 'oklch(0.696 0.17 162)',
-  freelance: 'oklch(0.627 0.194 303)',
-  bonus: 'oklch(0.75 0.168 79)',
-  other: 'oklch(0.556 0 0)',
-}
+const SOURCE_COLORS = SOURCE_COLOR_MAP
 
 export function IncomeList() {
-  const { incomes, deleteIncome } = useIncomeStore()
-  const { currentUser } = useAuthStore()
+  const { scope } = useScopeStore()
+  const { data: incomes = [] } = useIncomesQuery(scope)
+  const del = useDeleteIncome()
   const [editing, setEditing] = useState<Income | undefined>()
   const [showForm, setShowForm] = useState(false)
+  const [search, setSearch] = useState('')
 
-  const mine = incomes
-    .filter(i => i.userId === currentUser?.id)
+  const scoped = [...incomes]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-  const thisMonthTotal = mine
+  const q = search.toLowerCase().trim()
+  const mine = q
+    ? scoped.filter(i =>
+        i.description.toLowerCase().includes(q) ||
+        i.source.toLowerCase().includes(q)
+      )
+    : scoped
+
+  const thisMonthTotal = scoped
     .filter(i => i.date.startsWith(format(new Date(), 'yyyy-MM')))
     .reduce((sum, i) => sum + i.amount, 0)
 
-  const bySource = mine.reduce((acc, i) => ({
+  const bySource = scoped.reduce((acc, i) => ({
     ...acc,
     [i.source]: (acc[i.source] || 0) + i.amount
   }), {} as Record<string, number>)
@@ -45,15 +51,25 @@ export function IncomeList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="text-sm" style={{color: 'var(--color-muted-foreground)'}}>
-          This month: <span className="font-semibold text-green-400">{formatCurrency(thisMonthTotal)}</span>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-48">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{color: 'var(--color-muted-foreground)'}} />
+          <Input
+            placeholder="Search income..."
+            className="pl-9"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="text-sm whitespace-nowrap" style={{color: 'var(--color-muted-foreground)'}}>
+          This month: <span className="font-bold" style={{color: 'var(--color-income)'}}>{formatCurrency(thisMonthTotal)}</span>
         </div>
         <Button
-          style={{background: 'var(--color-brand-blue)'}}
+          className="rounded-2xl font-bold transition-transform active:scale-95"
+          style={{background: 'var(--color-primary)', color: 'var(--color-primary-foreground)'}}
           onClick={() => { setEditing(undefined); setShowForm(true) }}
         >
-          <Plus size={16} className="mr-2" /> Add Income
+          <Plus size={16} className="mr-1.5" /> Add Income
         </Button>
       </div>
 
@@ -69,7 +85,7 @@ export function IncomeList() {
               </Pie>
               <Tooltip
                 formatter={(v) => formatCurrency(Number(v))}
-                contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }}
+                contentStyle={chartTooltipStyle()}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -77,7 +93,8 @@ export function IncomeList() {
       )}
 
       <div className="glass-card overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-120">
           <thead>
             <tr style={{borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
               <th className="text-left px-4 py-3 font-medium" style={{color: 'var(--color-muted-foreground)'}}>Description</th>
@@ -89,27 +106,33 @@ export function IncomeList() {
           </thead>
           <tbody>
             {mine.map(i => (
-              <tr key={i.id} className="hover:bg-white/5 transition-colors" style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
-                <td className="px-4 py-3 font-medium">{i.description}</td>
+              <tr key={i.id} className="transition-colors hover:bg-[color-mix(in_oklch,var(--color-muted)_55%,transparent)]" style={{borderBottom: '1px solid var(--color-border)'}}>
+                <td className="px-4 py-3 font-medium">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span>{i.description}</span>
+                    {scope === 'household' && <OwnerPill userId={i.userId} />}
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <span
-                    className="text-xs capitalize px-2 py-0.5 rounded-full"
+                    className="text-[11px] font-bold capitalize px-2.5 py-1 rounded-full border"
                     style={{
-                      background: `color-mix(in oklch, ${SOURCE_COLORS[i.source] || SOURCE_COLORS.other} 20%, transparent)`,
+                      background: `${SOURCE_COLORS[i.source] || SOURCE_COLORS.other}33`,
                       color: SOURCE_COLORS[i.source] || SOURCE_COLORS.other,
+                      borderColor: `${SOURCE_COLORS[i.source] || SOURCE_COLORS.other}66`,
                     }}
                   >
                     {i.source}
                   </span>
                 </td>
                 <td className="px-4 py-3" style={{color: 'var(--color-muted-foreground)'}}>{formatDate(i.date)}</td>
-                <td className="px-4 py-3 text-right font-semibold text-green-400">{formatCurrency(i.amount)}</td>
+                <td className="px-4 py-3 text-right font-bold" style={{color: 'var(--color-income)'}}>{formatCurrency(i.amount)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1 justify-end">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditing(i); setShowForm(true) }}>
                       <Pencil size={13} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400" onClick={() => deleteIncome(i.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400" onClick={() => del.mutate(i.id)}>
                       <Trash2 size={13} />
                     </Button>
                   </div>
@@ -119,12 +142,13 @@ export function IncomeList() {
             {!mine.length && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center" style={{color: 'var(--color-muted-foreground)'}}>
-                  No income recorded yet
+                  {q ? 'No income matches your search' : 'No income recorded yet'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <IncomeForm open={showForm} onClose={() => { setShowForm(false); setEditing(undefined) }} editing={editing} />

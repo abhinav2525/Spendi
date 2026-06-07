@@ -3,8 +3,7 @@ import { useEffect } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { IncomeSchema, IncomeInput } from '@/lib/schemas/income.schema'
-import { useIncomeStore } from '@/lib/store/useIncomeStore'
-import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useCreateIncome, useUpdateIncome } from '@/lib/client/hooks/useIncomes'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,13 +16,13 @@ import { Income } from '@/types'
 interface Props { open: boolean; onClose: () => void; editing?: Income }
 
 export function IncomeForm({ open, onClose, editing }: Props) {
-  const { addIncome, updateIncome } = useIncomeStore()
-  const { currentUser } = useAuthStore()
+  const create = useCreateIncome()
+  const update = useUpdateIncome()
 
   const defaultAdd = { source: 'salary' as const, frequency: 'monthly' as const, date: toISODate(new Date()), customFields: [] as { label: string; value: string }[] }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { register, handleSubmit, setValue, reset, control, formState: { errors } } = useForm<IncomeInput>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(IncomeSchema) as any,
     defaultValues: editing || defaultAdd,
   })
@@ -36,9 +35,8 @@ export function IncomeForm({ open, onClose, editing }: Props) {
   const { fields, append, remove } = useFieldArray({ control, name: 'customFields' })
 
   const onSubmit = (data: IncomeInput) => {
-    if (editing) updateIncome(editing.id, data)
-    else addIncome({ ...data, userId: currentUser!.id })
-    onClose()
+    if (editing) update.mutate({ id: editing.id, input: data }, { onSuccess: onClose })
+    else create.mutate(data, { onSuccess: onClose })
   }
 
   return (
@@ -128,7 +126,11 @@ export function IncomeForm({ open, onClose, editing }: Props) {
 
           <div className="flex gap-2 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-            <Button type="submit" className="flex-1" style={{background: 'var(--color-brand-blue)'}}>
+            <Button
+              type="submit"
+              className="flex-1 rounded-2xl font-bold transition-transform active:scale-95"
+              style={{background: 'var(--color-primary)', color: 'var(--color-primary-foreground)'}}
+            >
               {editing ? 'Save' : 'Add Income'}
             </Button>
           </div>
