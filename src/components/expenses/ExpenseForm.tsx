@@ -3,8 +3,9 @@ import { useEffect } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ExpenseSchema, ExpenseInput } from '@/lib/schemas/expense.schema'
-import { useExpenseStore } from '@/lib/store/useExpenseStore'
-import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useCreateExpense, useUpdateExpense } from '@/lib/client/hooks/useExpenses'
+import { useEventStore } from '@/lib/store/useEventStore'
+import { useUser } from '@/lib/client/hooks/useUser'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,18 +22,26 @@ interface Props {
 }
 
 export function ExpenseForm({ open, onClose, editing }: Props) {
-  const { addExpense, updateExpense } = useExpenseStore()
-  const { currentUser } = useAuthStore()
+  const create = useCreateExpense()
+  const update = useUpdateExpense()
+  const { events } = useEventStore()
+  const { data: currentUser } = useUser()
 
-  const defaultAdd = { date: toISODate(new Date()), isRecurring: false, tags: [] as string[], customFields: [] as { label: string; value: string }[], paymentMode: 'upi' as const }
+  // Events the current user can tag against: their own + household
+  const taggableEvents = events
+    .filter(e => e.scope === 'household' || e.userId === currentUser?.id)
+    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const defaultAdd = { date: toISODate(new Date()), isRecurring: false, tags: [] as string[], customFields: [] as { label: string; value: string }[], paymentMode: 'upi' as const, eventId: undefined as string | undefined }
+
   const { register, handleSubmit, setValue, watch, reset, control, formState: { errors } } = useForm<ExpenseInput>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(ExpenseSchema) as any,
     defaultValues: editing ? {
       amount: editing.amount, category: editing.category, description: editing.description,
       date: editing.date, isRecurring: editing.isRecurring, recurringPeriod: editing.recurringPeriod,
       paymentMode: editing.paymentMode, tags: editing.tags, customFields: editing.customFields,
+      eventId: editing.eventId,
     } : defaultAdd,
   })
 
@@ -41,6 +50,7 @@ export function ExpenseForm({ open, onClose, editing }: Props) {
       amount: editing.amount, category: editing.category, description: editing.description,
       date: editing.date, isRecurring: editing.isRecurring, recurringPeriod: editing.recurringPeriod,
       paymentMode: editing.paymentMode, tags: editing.tags, customFields: editing.customFields,
+      eventId: editing.eventId,
     } : defaultAdd)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing])
@@ -50,13 +60,15 @@ export function ExpenseForm({ open, onClose, editing }: Props) {
   const { fields: cfFields, append: cfAppend, remove: cfRemove } = useFieldArray({ control, name: 'customFields' })
 
   const onSubmit = (data: ExpenseInput) => {
+    const payload = { ...data, eventId: data.eventId || undefined }
     if (editing) {
-      updateExpense(editing.id, data)
+      update.mutate({ id: editing.id, input: payload }, { onSuccess: onClose })
     } else {
-      addExpense({ ...data, userId: currentUser!.id })
+      create.mutate(payload, { onSuccess: onClose })
     }
-    onClose()
   }
+
+  const selectedEventId = watch('eventId')
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -141,6 +153,26 @@ export function ExpenseForm({ open, onClose, editing }: Props) {
             </div>
           )}
 
+          {taggableEvents.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Event (optional)</Label>
+              <Select
+                value={selectedEventId ?? '__none__'}
+                onValueChange={(v) => setValue('eventId', v === '__none__' ? undefined : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="No event" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No event</SelectItem>
+                  {taggableEvents.map(ev => (
+                    <SelectItem key={ev.id} value={ev.id}>
+                      {ev.emoji} {ev.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Custom Fields</Label>
@@ -173,7 +205,11 @@ export function ExpenseForm({ open, onClose, editing }: Props) {
 
           <div className="flex gap-2 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-            <Button type="submit" className="flex-1" style={{background: 'var(--color-brand-blue)'}}>
+            <Button
+              type="submit"
+              className="flex-1 rounded-2xl font-bold transition-transform active:scale-95"
+              style={{background: 'var(--color-primary)', color: 'var(--color-primary-foreground)'}}
+            >
               {editing ? 'Save Changes' : 'Add Expense'}
             </Button>
           </div>
