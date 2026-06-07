@@ -1,6 +1,6 @@
-import { User, Expense, Income, Subscription, GroceryEntry } from '@/types'
+import { User, Expense, Income, Subscription, GroceryEntry, Budget, FinanceEvent } from '@/types'
 import { toISODate } from './dateHelpers'
-import { subDays, subMonths, format } from 'date-fns'
+import { subDays } from 'date-fns'
 
 export const MOCK_USERS: User[] = [
   { id: 'admin-1', name: 'Rajesh (Admin)', role: 'admin', pin: '1234', createdAt: '2024-01-01' },
@@ -26,6 +26,32 @@ export const MOCK_SUBSCRIPTIONS: Subscription[] = [
   { id: 's2', userId: 'admin-1', name: 'Hotstar', amount: 299, frequency: 'monthly', renewalDate: toISODate(subDays(new Date(), -12)), category: 'entertainment', isActive: true },
   { id: 's3', userId: 'admin-1', name: 'Jio Fiber', amount: 999, frequency: 'monthly', renewalDate: toISODate(subDays(new Date(), -2)), category: 'utility', isActive: true },
   { id: 's4', userId: 'admin-1', name: 'Spotify', amount: 119, frequency: 'monthly', renewalDate: toISODate(subDays(new Date(), -20)), category: 'entertainment', isActive: true },
+]
+
+export const MOCK_EVENTS: FinanceEvent[] = [
+  {
+    id: 'ev1', scope: 'household', name: 'Diwali 2026', emoji: '🪔',
+    startDate: toISODate(subDays(new Date(), -114)),
+    endDate: toISODate(subDays(new Date(), -120)),
+    notes: 'Sweets, decor, gifts, puja supplies',
+    createdAt: '2026-05-01',
+  },
+  {
+    id: 'ev2', scope: 'user', userId: 'admin-1', name: 'Goa trip',
+    emoji: '🏖️',
+    startDate: toISODate(subDays(new Date(), -25)),
+    endDate: toISODate(subDays(new Date(), -30)),
+    notes: 'Long weekend with friends',
+    createdAt: '2026-05-15',
+  },
+]
+
+export const MOCK_BUDGETS: Budget[] = [
+  { id: 'b1', scope: 'user', userId: 'admin-1', category: 'food',      monthlyLimit: 5000 },
+  { id: 'b2', scope: 'user', userId: 'admin-1', category: 'transport', monthlyLimit: 2000 },
+  { id: 'b3', scope: 'user', userId: 'admin-1', category: 'overall',   monthlyLimit: 15000 },
+  { id: 'b4', scope: 'household',                category: 'overall',   monthlyLimit: 40000 },
+  { id: 'b5', scope: 'household',                category: 'entertainment', monthlyLimit: 3000 },
 ]
 
 export const MOCK_GROCERIES: GroceryEntry[] = [

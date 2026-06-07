@@ -40,6 +40,21 @@ export interface Expense {
   tags: string[]
   paymentMode: PaymentMode
   customFields: CustomField[]
+  eventId?: string
+}
+
+export type EventScope = 'user' | 'household'
+
+export interface FinanceEvent {
+  id: string
+  scope: EventScope
+  userId?: string
+  name: string
+  emoji: string
+  startDate: string
+  endDate?: string
+  notes?: string
+  createdAt: string
 }
 
 export interface GroceryItem {
@@ -79,6 +94,18 @@ export interface Subscription {
   category: SubscriptionCategory
   isActive: boolean
   notes?: string
+}
+
+export type BudgetCategory = ExpenseCategory | 'overall'
+
+export type BudgetScope = 'user' | 'household'
+
+export interface Budget {
+  id: string
+  scope: BudgetScope
+  userId?: string
+  category: BudgetCategory
+  monthlyLimit: number
 }
 
 export type IncomeSource =

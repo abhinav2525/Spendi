@@ -15,6 +15,7 @@ export const ExpenseSchema = z.object({
   tags: z.array(z.string()).default([]),
   paymentMode: z.enum(['cash', 'upi', 'card', 'netbanking']).default('upi'),
   customFields: z.array(CustomFieldSchema).default([]),
+  eventId: z.string().optional(),
 })
 
 export type ExpenseInput = z.infer<typeof ExpenseSchema>

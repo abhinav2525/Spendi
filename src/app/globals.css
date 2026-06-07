@@ -3,90 +3,187 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ──────────────────────────────────────────────────────────────
+   GharKhata — playful & rounded
+   Warm cream surfaces, pastel accents, friendly geometry.
+   Display: Fraunces (variable serif, soft + wonky)
+   Body:    Nunito  (humanist rounded sans)
+   ──────────────────────────────────────────────────────────── */
+
 @theme inline {
-  --color-background: oklch(0.98 0 0);
-  --color-foreground: oklch(0.145 0 0);
+  /* Surfaces */
+  --color-background: oklch(0.985 0.012 75);      /* warm cream */
+  --color-foreground: oklch(0.28 0.04 290);       /* deep aubergine, softer than black */
   --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.145 0 0);
-  --color-primary: oklch(0.623 0.214 259.1);
-  --color-primary-foreground: oklch(0.985 0 0);
-  --color-muted: oklch(0.97 0 0);
-  --color-muted-foreground: oklch(0.556 0 0);
-  --color-border: oklch(0.922 0 0);
-  --color-accent-gold: oklch(0.75 0.168 79);
-  --color-brand-blue: oklch(0.623 0.214 259.1);
-  --font-sans: var(--font-inter);
-  --radius: 1rem;
+  --color-card-foreground: oklch(0.28 0.04 290);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.28 0.04 290);
+
+  /* Brand / semantic */
+  --color-primary: oklch(0.72 0.16 165);          /* mint — "growth" */
+  --color-primary-foreground: oklch(0.99 0.005 75);
+  --color-secondary: oklch(0.94 0.04 70);         /* peach mist */
+  --color-secondary-foreground: oklch(0.32 0.05 30);
+  --color-muted: oklch(0.95 0.015 75);
+  --color-muted-foreground: oklch(0.50 0.04 280);
+  --color-accent: oklch(0.93 0.06 90);            /* butter */
+  --color-accent-foreground: oklch(0.32 0.06 60);
+  --color-destructive: oklch(0.72 0.18 25);       /* warm coral, not red */
+  --color-destructive-foreground: oklch(0.99 0.005 75);
+  --color-border: oklch(0.91 0.02 80);
+  --color-input: oklch(0.78 0.025 80);
+  --color-ring: oklch(0.72 0.16 165);
+
+  /* Pastel palette — used by category pills, owner pills, charts */
+  --pastel-peach:    #ffb88c;
+  --pastel-sky:      #a5d8ff;
+  --pastel-butter:   #ffd97d;
+  --pastel-lavender: #c8b6ff;
+  --pastel-rose:     #ffadad;
+  --pastel-mint:     #a3e4d7;
+  --pastel-lemon:    #fdffb6;
+  --pastel-stone:    #d4d4d4;
+
+  /* Semantic accents for money flows */
+  --color-income:  oklch(0.74 0.14 155);          /* mint green */
+  --color-expense: oklch(0.70 0.17 25);           /* warm coral */
+  --color-warn:    oklch(0.82 0.14 75);           /* honey */
+
+  /* Brand for wordmarks */
+  --color-brand-coral: oklch(0.72 0.18 30);
+  --color-brand-plum:  oklch(0.45 0.18 320);
+
+  /* Typography */
+  --font-sans:    var(--font-nunito);
+  --font-display: var(--font-fraunces);
+
+  /* Geometry — friendlier than the previous 1rem */
+  --radius: 1.25rem;
+  --radius-sm: 0.875rem;
+  --radius-lg: 2rem;
 }
 
+/* Dark theme stays usable (toggle still works) but is no longer the headline look */
 .dark {
-  --color-background: oklch(0.145 0 0);
-  --color-foreground: oklch(0.985 0 0);
-  --color-card: oklch(0.205 0 0);
-  --color-card-foreground: oklch(0.985 0 0);
-  --color-primary: oklch(0.623 0.214 259.1);
-  --color-primary-foreground: oklch(0.985 0 0);
-  --color-muted: oklch(0.269 0 0);
-  --color-muted-foreground: oklch(0.708 0 0);
-  --color-border: oklch(0.269 0 0);
-  --color-accent-gold: oklch(0.75 0.168 79);
-  --color-brand-blue: oklch(0.623 0.214 259.1);
+  --color-background: oklch(0.20 0.025 295);
+  --color-foreground: oklch(0.97 0.01 75);
+  --color-card: oklch(0.27 0.03 295);
+  --color-card-foreground: oklch(0.97 0.01 75);
+  --color-popover: oklch(0.27 0.03 295);
+  --color-popover-foreground: oklch(0.97 0.01 75);
+  --color-primary: oklch(0.78 0.14 165);
+  --color-primary-foreground: oklch(0.18 0.03 295);
+  --color-secondary: oklch(0.33 0.05 295);
+  --color-secondary-foreground: oklch(0.97 0.01 75);
+  --color-muted: oklch(0.30 0.03 295);
+  --color-muted-foreground: oklch(0.72 0.03 290);
+  --color-accent: oklch(0.40 0.10 75);
+  --color-accent-foreground: oklch(0.97 0.01 75);
+  --color-destructive: oklch(0.70 0.18 25);
+  --color-destructive-foreground: oklch(0.97 0.01 75);
+  --color-border: oklch(0.34 0.03 295);
+  --color-input: oklch(0.40 0.03 295);
+  --color-ring: oklch(0.78 0.14 165);
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
   }
-  body {
+
+  html {
+    /* subtle dot pattern — adds tactile depth without competing */
     background-color: var(--color-background);
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      color-mix(in oklch, var(--color-foreground) 8%, transparent) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
+  }
+
+  body {
+    background: transparent;
     color: var(--color-foreground);
     font-family: var(--font-sans, sans-serif);
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display, serif);
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 }
 
 @layer components {
-  .glass-card {
-    background-color: color-mix(in oklch, white 60%, transparent);
-    backdrop-filter: blur(12px);
-    border: 1px solid color-mix(in oklch, white 20%, transparent);
+  /* Replaces the previous .glass-card. Solid soft surface with chunky rounded
+     corners and a low warm shadow. Far friendlier than glass-morphism. */
+  .soft-card {
+    background-color: var(--color-card);
+    border: 1px solid color-mix(in oklch, var(--color-border) 80%, transparent);
     border-radius: var(--radius);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow:
+      0 1px 0 color-mix(in oklch, white 80%, transparent) inset,
+      0 8px 24px -12px color-mix(in oklch, var(--color-foreground) 20%, transparent);
   }
 
-  .dark .glass-card {
-    background-color: color-mix(in oklch, white 5%, transparent);
-    border-color: color-mix(in oklch, white 10%, transparent);
+  .dark .soft-card {
+    background-color: var(--color-card);
+    border-color: color-mix(in oklch, white 8%, transparent);
+    box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Backwards-compat alias so existing markup keeps working. */
+  .glass-card {
+    background-color: var(--color-card);
+    border: 1px solid color-mix(in oklch, var(--color-border) 80%, transparent);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px -12px color-mix(in oklch, var(--color-foreground) 18%, transparent);
   }
 
   .glass-card-hover {
-    background-color: color-mix(in oklch, white 60%, transparent);
-    backdrop-filter: blur(12px);
-    border: 1px solid color-mix(in oklch, white 20%, transparent);
+    background-color: var(--color-card);
+    border: 1px solid color-mix(in oklch, var(--color-border) 80%, transparent);
     border-radius: var(--radius);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    transition: all 0.2s;
+    box-shadow: 0 8px 24px -12px color-mix(in oklch, var(--color-foreground) 18%, transparent);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
   }
 
   .glass-card-hover:hover {
-    background-color: color-mix(in oklch, white 80%, transparent);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-3px) rotate(-0.25deg);
+    box-shadow: 0 14px 30px -10px color-mix(in oklch, var(--color-foreground) 28%, transparent);
   }
 
+  .dark .glass-card,
   .dark .glass-card-hover {
-    background-color: color-mix(in oklch, white 5%, transparent);
-    border-color: color-mix(in oklch, white 10%, transparent);
+    background-color: var(--color-card);
+    border-color: color-mix(in oklch, white 8%, transparent);
   }
 
-  .dark .glass-card-hover:hover {
-    background-color: color-mix(in oklch, white 10%, transparent);
-  }
-
+  /* Display gradient — used by the wordmark */
   .gradient-text {
-    background: linear-gradient(to right, oklch(0.623 0.214 259.1), oklch(0.75 0.168 79));
+    background: linear-gradient(
+      120deg,
+      var(--color-brand-coral) 0%,
+      var(--color-accent-gold, oklch(0.82 0.14 75)) 50%,
+      var(--color-brand-plum) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    font-family: var(--font-display, serif);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-number {
+    font-family: var(--font-display, serif);
+    font-weight: 600;
+    font-variation-settings: "SOFT" 100, "WONK" 0, "opsz" 144;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
   }
 
   .page-container {
@@ -98,7 +195,22 @@
 
   @media (min-width: 768px) {
     .page-container {
-      padding: 1.5rem;
+      padding: 1.75rem 2rem;
     }
+  }
+
+  /* Decorative tag used on empty states and the login card */
+  .candy-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--color-primary) 18%, transparent);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
   }
 }
