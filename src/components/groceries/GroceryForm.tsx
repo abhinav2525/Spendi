@@ -2,8 +2,7 @@
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { GroceryEntrySchema, GroceryEntryInput } from '@/lib/schemas/grocery.schema'
-import { useGroceryStore } from '@/lib/store/useGroceryStore'
-import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useCreateGrocery } from '@/lib/client/hooks/useGroceries'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,11 +14,10 @@ import { useEffect } from 'react'
 interface Props { open: boolean; onClose: () => void }
 
 export function GroceryForm({ open, onClose }: Props) {
-  const { addGrocery } = useGroceryStore()
-  const { currentUser } = useAuthStore()
+  const create = useCreateGrocery()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { register, handleSubmit, control, watch, setValue, reset, formState: { errors } } = useForm<GroceryEntryInput>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(GroceryEntrySchema) as any,
     defaultValues: {
       date: toISODate(new Date()),
@@ -39,10 +37,13 @@ export function GroceryForm({ open, onClose }: Props) {
   }, [JSON.stringify(watchedItems)])
 
   const onSubmit = (data: GroceryEntryInput) => {
-    const totalAmount = data.items.reduce((sum, item) => sum + item.totalPrice, 0)
-    addGrocery({ ...data, userId: currentUser!.id, totalAmount })
-    reset()
-    onClose()
+    // Server recomputes totalAmount from items — we don't pass it.
+    create.mutate(data, {
+      onSuccess: () => {
+        reset()
+        onClose()
+      },
+    })
   }
 
   return (
@@ -106,7 +107,11 @@ export function GroceryForm({ open, onClose }: Props) {
 
           <div className="flex gap-2 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-            <Button type="submit" className="flex-1" style={{background: 'var(--color-brand-blue)'}}>Save Trip</Button>
+            <Button
+              type="submit"
+              className="flex-1 rounded-2xl font-bold transition-transform active:scale-95"
+              style={{background: 'var(--color-primary)', color: 'var(--color-primary-foreground)'}}
+            >Save Trip</Button>
           </div>
         </form>
       </DialogContent>
