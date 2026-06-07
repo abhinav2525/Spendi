@@ -1,6 +1,5 @@
 import { Budget, Expense, BudgetCategory } from '@/types'
 import { Scope } from '@/lib/store/useScopeStore'
-import { filterByScope } from '@/lib/utils/scopeFilter'
 
 export type BudgetTier = 'safe' | 'warning' | 'over'
 
@@ -33,8 +32,9 @@ export function computeBudgetStatuses(
     return true
   })
 
-  const monthExpenses = filterByScope(expenses, scope, currentUserId)
-    .filter(e => e.date.startsWith(monthKey))
+  // `expenses` is already scope-filtered by the caller (server-side via
+  // useExpensesQuery(scope)), so we only narrow by month here.
+  const monthExpenses = expenses.filter(e => e.date.startsWith(monthKey))
 
   return relevant.map(b => {
     const spent = b.category === 'overall'

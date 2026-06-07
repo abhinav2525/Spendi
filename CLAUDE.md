@@ -53,7 +53,7 @@ There are no tests at this time. The verification bar before committing is:
 > | Events | ✅ Server Actions + TanStack Query — `useEventStore` deleted (Zod + DB CHECK enforce `endDate >= startDate`; delete cascades to `expenses.eventId = NULL`) |
 > | Scope toggle | Stays Zustand (UI state, not server state) |
 >
-> **All domains are migrated.** The only Zustand store still alive is `useScopeStore` (UI state). What's left is Phase 9 (final cleanup): retire `scopeFilter.ts`, confirm `mockData.ts` only feeds the seed script, refresh any stale doc references.
+> **All domains are migrated.** The only Zustand store still alive is `useScopeStore` (UI state). Phase 9 (cleanup) has shipped: `scopeFilter.ts` is gone, `mockData.ts` is server-side-only (imported by `seed.ts`), and the "Add a new domain" worked example + Forms canonical pattern below now reflect the Server Action + hook shape (not the legacy Zustand approach).
 >
 > Before assuming a domain uses Zustand: grep `useXxxStore`. If the store file is gone, the domain is migrated and consumers use `useXxxQuery / useCreateX / useUpdateX / useDeleteX` hooks under `src/lib/client/hooks/`. See **"Migrated domain pattern"** below for the canonical template (established by expenses, applied to income and subscriptions).
 
@@ -190,18 +190,19 @@ The pattern is consistent — find the files for any domain by name. **State col
 
 ### Scope toggle (Mine / Household)
 
-`useScopeStore` exposes a global `scope: 'mine' | 'household'` controlled by `<ScopeToggle />` mounted in `Header`. **Every list/chart that filters by user must use this pattern**:
+`useScopeStore` exposes a global `scope: 'mine' | 'household'` controlled by `<ScopeToggle />` mounted in `Header`. **Pass the scope to the domain query hook; the server filters**:
 
 ```ts
 import { useScopeStore } from '@/lib/store/useScopeStore'
-import { filterByScope } from '@/lib/utils/scopeFilter'
+import { useExpensesQuery } from '@/lib/client/hooks/useExpenses'
 
 const { scope } = useScopeStore()
-const { currentUser } = useAuthStore()
-const visible = filterByScope(items, scope, currentUser?.id)
+const { data: items = [] } = useExpensesQuery(scope)
 ```
 
-`filterByScope` is generic over `T extends { userId: string }` and returns all items when `scope === 'household'`, only the current user's when `scope === 'mine'`. When rendering household view, show `<OwnerPill userId={item.userId} />` next to each entry so the source is obvious.
+The Server Action filters by `householdId` always and adds `eq(userId, me.id)` when `scope === 'mine'`. No client-side `filterByScope` is needed — the previous helper was retired in Phase 9 once all domains were migrated. When rendering household view, show `<OwnerPill userId={item.userId} />` next to each entry so the source is obvious.
+
+For the two domains whose query hooks take no scope arg (`useBudgetsQuery`, `useEventsQuery`), the list is small enough to over-fetch and the filtering rules are more nuanced than `mine` vs `household` — they're filtered client-side in the component.
 
 ### Per-user vs household entities (budgets, events)
 
@@ -236,7 +237,7 @@ This prevents the classic bug where one surface says "92%" and another says "94%
 
 ### Domain scaffold (worked example)
 
-Adding a new domain — say "loans" — touches these layers in order:
+Adding a new domain — say "loans" — touches these layers in order. This is the **post-migration pattern** (Server Actions + TanStack Query); the legacy Zustand store approach is gone. For the full 5-piece migration template see [`docs/migration.md`](docs/migration.md).
 
 **1. Type** (`src/types/index.ts`)
 ```ts
@@ -262,38 +263,30 @@ export const LoanSchema = z.object({
 export type LoanInput = z.infer<typeof LoanSchema>
 ```
 
-**3. Mock seed** (`src/lib/utils/mockData.ts`) — add `MOCK_LOANS: Loan[] = [...]`
-
-**4. Store** (`src/lib/store/useLoanStore.ts`) — mirror `useExpenseStore.ts` exactly:
+**3. Drizzle table + migration** (`src/lib/server/db/schema.ts`)
 ```ts
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import { Loan } from '@/types'
-import { nanoid } from 'nanoid'
-import { MOCK_LOANS } from '@/lib/utils/mockData'
-
-interface LoanState {
-  loans: Loan[]
-  addLoan: (loan: Omit<Loan, 'id'>) => void
-  updateLoan: (id: string, loan: Partial<Loan>) => void
-  deleteLoan: (id: string) => void
-}
-
-export const useLoanStore = create<LoanState>()(
-  persist((set) => ({
-    loans: MOCK_LOANS,
-    addLoan: (loan) => set(s => ({ loans: [...s.loans, { ...loan, id: nanoid() }] })),
-    updateLoan: (id, loan) => set(s => ({ loans: s.loans.map(l => l.id === id ? { ...l, ...loan } : l) })),
-    deleteLoan: (id) => set(s => ({ loans: s.loans.filter(l => l.id !== id) })),
-  }), { name: 'loan-storage' })
-)
+export const loans = pgTable('loans', {
+  id: uuid().defaultRandom().primaryKey(),
+  householdId: uuid().notNull().references(() => households.id, { onDelete: 'cascade' }),
+  userId: uuid().notNull().references(() => householdMembers.id, { onDelete: 'cascade' }),
+  lender: text().notNull(),
+  principal: amount().notNull(),
+  // ...
+  createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index('loans_household_id_idx').on(t.householdId), index('loans_user_id_idx').on(t.userId)])
 ```
 
-**5. Optional util** (`src/lib/utils/loanStatus.ts`) — if multiple surfaces need computed values.
+Then: `bun db:generate` to write the SQL migration, `bun db:migrate` to apply.
 
-**6. Components** (`src/components/loans/`) — `LoanForm.tsx`, `LoanList.tsx`, `LoanCard.tsx`, etc. Copy structure from `components/budgets/` or `components/events/` depending on whether it's table-shaped or card-shaped.
+**4. Server Actions** (`src/lib/server/actions/loans.ts`) — mirror `expenses.ts`. Every action calls `await requireMember()` first; `userId` + `householdId` filled server-side, never trusted from input. See [`src/lib/server/actions/CLAUDE.md`](src/lib/server/actions/CLAUDE.md) for the 5-step contract.
 
-**7. Page** (`src/app/(dashboard)/loans/page.tsx`) — typically 5 lines:
+**5. Client hooks** (`src/lib/client/hooks/useLoans.ts`) — `useLoansQuery(scope)`, `useCreateLoan`, `useUpdateLoan`, `useDeleteLoan` (optimistic delete). See [`src/lib/client/hooks/CLAUDE.md`](src/lib/client/hooks/CLAUDE.md) for the mutation pattern.
+
+**6. Optional pure helper** (`src/lib/utils/loanStatus.ts`) — only if multiple surfaces need computed values (e.g. payoff projection used by both a widget and a list).
+
+**7. Components** (`src/components/loans/`) — `LoanForm.tsx`, `LoanList.tsx`, etc. Use the canonical Form pattern below; consumers call `useLoansQuery(scope)` and the mutation hooks.
+
+**8. Page** (`src/app/(dashboard)/loans/page.tsx`) — typically 5 lines:
 ```tsx
 import { Header } from '@/components/layout/Header'
 import { LoanList } from '@/components/loans/LoanList'
@@ -308,7 +301,9 @@ export default function LoansPage() {
 }
 ```
 
-**8. Nav** — add to both `Sidebar.tsx` (desktop) and `BottomNav.tsx` (mobile, currently 6 tabs — **swap one don't append**, since 7+ tabs at 320px breaks the 44px tap target).
+**9. Nav** — add to both `Sidebar.tsx` (desktop) and `BottomNav.tsx` (mobile, currently 6 tabs — **swap one don't append**, since 7+ tabs at 320px breaks the 44px tap target).
+
+**10. Seed (optional)** — if you want demo data on first run, add `MOCK_LOANS` to `src/lib/utils/mockData.ts` and an inserter block in `src/lib/server/db/seed.ts`. `mockData.ts` is imported only by the seed; it does not ship in the client bundle.
 
 ### Forms
 
@@ -322,10 +317,12 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { LoanSchema, LoanInput } from '@/lib/schemas/loan.schema'
+import { useCreateLoan, useUpdateLoan } from '@/lib/client/hooks/useLoans'
 
 export function LoanForm({ open, onClose, editing }: Props) {
-  const { addLoan, updateLoan } = useLoanStore()
-  const { currentUser } = useAuthStore()
+  const create = useCreateLoan()
+  const update = useUpdateLoan()
+  // No useAuthStore / useUser — server fills userId from requireMember()
 
   const defaultAdd = { /* sensible defaults */ }
 
@@ -341,9 +338,8 @@ export function LoanForm({ open, onClose, editing }: Props) {
   }, [open, editing])
 
   const onSubmit = (data: LoanInput) => {
-    if (editing) updateLoan(editing.id, data)
-    else addLoan({ ...data, userId: currentUser!.id })
-    onClose()
+    if (editing) update.mutate({ id: editing.id, input: data }, { onSuccess: onClose })
+    else create.mutate(data, { onSuccess: onClose })
   }
 
   return ( /* Dialog with form */ )

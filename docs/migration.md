@@ -23,7 +23,9 @@ The end state: data lives in Supabase, three family members share one household,
 | 6 | Groceries | ✅ Done |
 | 7 | Budgets (including the partial-index upsert) | ✅ Done |
 | 8 | Events (including the `endDate >= startDate` Zod + DB rule) | ✅ Done |
-| 9 | Final cleanup — delete `mockData.ts` from production paths, retire `scopeFilter.ts` if unused, refresh CLAUDE.md | ⏳ Pending |
+| 9 | Final cleanup — retired `scopeFilter.ts`, rewrote the "Add a new domain" worked example and the Forms canonical pattern in CLAUDE.md to reflect the post-migration shape | ✅ Done |
+
+**The migration is complete.** Every domain Zustand store has been deleted; only `useScopeStore` survives as UI state. The README, root CLAUDE.md, and per-folder CLAUDE.md files all describe the post-migration architecture.
 
 The full plan with file-level detail lives at `~/.claude/plans/cosmic-munching-brooks.md`.
 
